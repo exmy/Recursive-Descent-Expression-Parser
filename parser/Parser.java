@@ -1,89 +1,33 @@
 package parser;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * the recursive descent parser that does not use variables.
  */
 public class Parser {
-	// 标识符的类型
+	// 卤锚脢露路没碌脛脌脿脨脥
 	final int NONE = 0;
-	final int DELIMITER = 1;	// 表示分隔符, 如 [  + - & % ? ^ ( )]
-	final int VARIABLE = 2;		// 表示变量
-	final int NUMBER = 3;		// 表示数值
+	final int DELIMITER = 1;	// 卤铆脢戮路脰赂么路没, 脠莽 [  + - & % ? ^ ( )]
+	final int VARIABLE = 2;		// 卤铆脢戮卤盲脕驴
+	final int NUMBER = 3;		// 卤铆脢戮脢媒脰碌
 	
-	// 语法错误的类型
-	final int SYNTAX = 0;		// 语法错误
-	final int UNBALPARENS = 1;	// 括号不匹配
-	final int NOEXP = 2;		// 空输入
-	final int DIVBYZERO = 3;	// 除零
+	// 脫茂路篓麓铆脦贸碌脛脌脿脨脥
+	final int SYNTAX = 0;		// 脫茂路篓麓铆脦贸
+	final int UNBALPARENS = 1;	// 脌篓潞脜虏禄脝楼脜盲
+	final int NOEXP = 2;		// 驴脮脢盲脠毛
+	final int DIVBYZERO = 3;	// 鲁媒脕茫
 	
-	final String EOE = "\0";	//表示表达式的结束
+	final String EOE = "\0";	//卤铆脢戮卤铆麓茂脢陆碌脛陆谩脢酶
 	
-	private String exp;	// 要计算的表达式
-	private int expIdx;	// 表达式的当前索引
-	private String token;	// 当前的标识符
-	private int tokType;	// 当前标识符的类型
+	private String exp;	// 脪陋录脝脣茫碌脛卤铆麓茂脢陆
+	private int expIdx;	// 卤铆麓茂脢陆碌脛碌卤脟掳脣梅脪媒
+	private String token;	// 碌卤脟掳碌脛卤锚脢露路没
+	private int tokType;	// 碌卤脟掳卤锚脢露路没碌脛脌脿脨脥
 	
-	/**
-	 * return true if c is a delimiter
-	 */
-	private boolean isDelim(char c){
-		return " +-/*%^=()".indexOf(c) != -1;
-	}
-	
-	/**
-	 * 获取下一个标识符
-	 */
-	private void getToken(){
-		tokType = NONE;
-		token = "";
-		
-		if(expIdx == exp.length()){
-			token = EOE;
-			return;
-		}
-		// 跳过空格
-		while(expIdx < exp.length() && Character.isWhitespace(exp.charAt(expIdx))){
-			++expIdx;
-		}
-		
-		// 表达式末尾是空格
-		if(expIdx == exp.length()){
-			token = EOE;
-			return;
-		}
-		
-		if(isDelim(exp.charAt(expIdx))){	//分隔符
-			token += exp.charAt(expIdx);
-			expIdx++;
-			tokType = DELIMITER;
-		}else if(Character.isLetter(exp.charAt(expIdx))){	// 变量
-			while(expIdx < exp.length() && !isDelim(exp.charAt(expIdx))){
-				token += exp.charAt(expIdx);
-				expIdx++;
-			}
-			tokType = VARIABLE;
-		}else if(Character.isDigit(exp.charAt(expIdx))){	// 数值
-			while(expIdx < exp.length() && !isDelim(exp.charAt(expIdx))){
-				token += exp.charAt(expIdx);
-				expIdx++;
-			}
-			tokType = NUMBER;
-		}else{	// 未知类型，表达式终止
-			token = EOE;
-			return;
-		}
-	}
-	
-	/**
-	 * process exception
-	 * @param error
-	 * @throws ParserException
-	 */
-	private void handleErr(int error) throws ParserException{
-		String[] err = {"Systax Error", "Unbalanced Parentheses", "No Expression", 
-						"Division by Zero"};
-		throw new ParserException(err[error]);
-	}
+	// 麓忙麓垄卤盲脕驴碌脛脰碌
+	private Map<String, Double> varMap = new HashMap<>();
 	
 	/**
 	 * parse and execute the expression
@@ -100,14 +44,39 @@ public class Parser {
 		
 		if(token.equals(EOE)) handleErr(NOEXP);
 		
-		// 解析表达式
-		result = exec2();
+		// 陆芒脦枚卤铆麓茂脢陆
+		result = exec1();
 		
 		if(!token.equals(EOE)) handleErr(SYNTAX);
 		return result;
 	}
 	
-	// 加减两项
+	private double exec1() throws ParserException{
+		double result;
+		int temp_tokType;
+		String temp_token;
+		
+		if(tokType == VARIABLE){
+			temp_token = new String(token);
+			temp_tokType = tokType;
+		
+			getToken();
+			
+			if(!token.equals("=")){
+				putback();
+				token = new String(temp_token);
+				tokType = temp_tokType;
+			}else{
+				getToken();
+				result = exec2();
+				varMap.put(temp_token, result);
+				return result;
+			}
+		}
+		return exec2();
+	}
+	
+	// 录脫录玫脕陆脧卯
 	private double exec2() throws ParserException{
 		char op;
 		double result;
@@ -131,7 +100,7 @@ public class Parser {
 		return result;
 	}
 	
-	// 乘除两个因数
+	// 鲁脣鲁媒脕陆赂枚脪貌脢媒
 	private double exec3() throws ParserException{
 		char op;
 		double result;
@@ -160,7 +129,7 @@ public class Parser {
 	}
 	
 	
-	// 处理指数
+	// 麓娄脌铆脰赂脢媒
 	private double exec4() throws ParserException{
 		double result;
 		double partialResult;
@@ -181,7 +150,7 @@ public class Parser {
 		return result;
 	}
 	
-	// 处理一元加减
+	// 麓娄脌铆脪禄脭陋录脫录玫
 	private double exec5() throws ParserException{
 		double result;
 		String op = "";
@@ -196,13 +165,13 @@ public class Parser {
 		return result;
 	}
 	
-	// 处理括号里的表达式
+	// 麓娄脌铆脌篓潞脜脌茂碌脛卤铆麓茂脢陆
 	private double exec6() throws ParserException{
 		double result;
 		
 		if(token.equals("(")){
 			getToken();
-			result = exec2();
+			result = exec1();
 			if(!token.equals(")")) handleErr(UNBALPARENS);
 			getToken();
 		}
@@ -211,7 +180,75 @@ public class Parser {
 		return result;
 	}
 	
-	// 获取 token 的值
+	private void putback(){
+		if(token == EOE) return;
+		for(int i = 0; i < token.length(); ++i) expIdx--;
+	}
+	
+	/**
+	 * return true if c is a delimiter
+	 */
+	private boolean isDelim(char c){
+		return " +-/*%^=()".indexOf(c) != -1;
+	}
+	
+	/**
+	 * 禄帽脠隆脧脗脪禄赂枚卤锚脢露路没
+	 */
+	private void getToken(){
+		tokType = NONE;
+		token = "";
+		
+		if(expIdx == exp.length()){
+			token = EOE;
+			return;
+		}
+		// 脤酶鹿媒驴脮赂帽
+		while(expIdx < exp.length() && Character.isWhitespace(exp.charAt(expIdx))){
+			++expIdx;
+		}
+		
+		// 卤铆麓茂脢陆脛漏脦虏脢脟驴脮赂帽
+		if(expIdx == exp.length()){
+			token = EOE;
+			return;
+		}
+		
+		if(isDelim(exp.charAt(expIdx))){	//路脰赂么路没
+			token += exp.charAt(expIdx);
+			expIdx++;
+			tokType = DELIMITER;
+		}else if(Character.isLetter(exp.charAt(expIdx))){	// 卤盲脕驴
+			while(expIdx < exp.length() && !isDelim(exp.charAt(expIdx))){
+				token += exp.charAt(expIdx);
+				expIdx++;
+			}
+			tokType = VARIABLE;
+		}else if(Character.isDigit(exp.charAt(expIdx))){	// 脢媒脰碌
+			while(expIdx < exp.length() && !isDelim(exp.charAt(expIdx))){
+				token += exp.charAt(expIdx);
+				expIdx++;
+			}
+			tokType = NUMBER;
+		}
+		else{	// 脦麓脰陋脌脿脨脥拢卢卤铆麓茂脢陆脰脮脰鹿
+			token = EOE;
+			return;
+		}
+	}
+	
+	/**
+	 * process exception
+	 * @param error
+	 * @throws ParserException
+	 */
+	private void handleErr(int error) throws ParserException{
+		String[] err = {"Systax Error", "Unbalanced Parentheses", "No Expression", 
+						"Division by Zero"};
+		throw new ParserException(err[error]);
+	}
+	
+	// 禄帽脠隆 token 碌脛脰碌
 	private double atom() throws ParserException{
 		double result = 0.0;
 		
@@ -224,13 +261,24 @@ public class Parser {
 			}
 			getToken();
 			break;
-		// 变量待处理
+		case VARIABLE:
+			result = findVar(token);
+			getToken();
+			break;
 		default:
 			handleErr(SYNTAX);
 			break;
 		}
 		
 		return result;
+	}
+	
+	private double findVar(String vname) throws ParserException{
+		if(!varMap.containsKey(vname)){
+			handleErr(SYNTAX);
+			return 0.0;
+		}
+		return varMap.get(vname);
 	}
 
 }

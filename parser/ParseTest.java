@@ -13,7 +13,7 @@ public class ParseTest {
 		System.out.println("Enter an empty expression to stop: ");
 		
 		while(true){
-			System.out.print(">>>");
+			System.out.print(">>> ");
 			String exp = br.readLine();
 			if(exp.equals("")) break;
 			try{
