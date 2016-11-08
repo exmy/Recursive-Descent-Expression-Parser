@@ -7,26 +7,26 @@ import java.util.Map;
  * the recursive descent parser that does not use variables.
  */
 public class Parser {
-	// ±êÊ¶·ûµÄÀàÐÍ
+	// 标识符的类型
 	final int NONE = 0;
-	final int DELIMITER = 1;	// ±íÊ¾·Ö¸ô·û, Èç [  + - & % ? ^ ( )]
-	final int VARIABLE = 2;		// ±íÊ¾±äÁ¿
-	final int NUMBER = 3;		// ±íÊ¾ÊýÖµ
+	final int DELIMITER = 1;	// 表示分隔符, 如 [  + - & % ? ^ ( )]
+	final int VARIABLE = 2;		// 表示变量
+	final int NUMBER = 3;		// 表示数值
 	
-	// Óï·¨´íÎóµÄÀàÐÍ
-	final int SYNTAX = 0;		// Óï·¨´íÎó
-	final int UNBALPARENS = 1;	// À¨ºÅ²»Æ¥Åä
-	final int NOEXP = 2;		// ¿ÕÊäÈë
-	final int DIVBYZERO = 3;	// ³ýÁã
+	// 语法错误的类型
+	final int SYNTAX = 0;		// 语法错误
+	final int UNBALPARENS = 1;	// 括号不匹配
+	final int NOEXP = 2;		// 空输入
+	final int DIVBYZERO = 3;	// 除零
 	
-	final String EOE = "\0";	//±íÊ¾±í´ïÊ½µÄ½áÊø
+	final String EOE = "\0";	//表示表达式的结束
 	
-	private String exp;	// Òª¼ÆËãµÄ±í´ïÊ½
-	private int expIdx;	// ±í´ïÊ½µÄµ±Ç°Ë÷Òý
-	private String token;	// µ±Ç°µÄ±êÊ¶·û
-	private int tokType;	// µ±Ç°±êÊ¶·ûµÄÀàÐÍ
+	private String exp;	// 要计算的表达式
+	private int expIdx;	// 表达式的当前索引
+	private String token;	// 当前的标识符
+	private int tokType;	// 当前标识符的类型
 	
-	// ´æ´¢±äÁ¿µÄÖµ
+	// 存储变量的值
 	private Map<String, Double> varMap = new HashMap<>();
 	
 	/**
@@ -44,7 +44,7 @@ public class Parser {
 		
 		if(token.equals(EOE)) handleErr(NOEXP);
 		
-		// ½âÎö±í´ïÊ½
+		// 解析表达式
 		result = exec1();
 		
 		if(!token.equals(EOE)) handleErr(SYNTAX);
@@ -76,7 +76,7 @@ public class Parser {
 		return exec2();
 	}
 	
-	// ¼Ó¼õÁ½Ïî
+	// 加减两项
 	private double exec2() throws ParserException{
 		char op;
 		double result;
@@ -100,7 +100,7 @@ public class Parser {
 		return result;
 	}
 	
-	// ³Ë³ýÁ½¸öÒòÊý
+	// 乘除两个因数
 	private double exec3() throws ParserException{
 		char op;
 		double result;
@@ -129,7 +129,7 @@ public class Parser {
 	}
 	
 	
-	// ´¦ÀíÖ¸Êý
+	// 处理指数
 	private double exec4() throws ParserException{
 		double result;
 		double partialResult;
@@ -150,7 +150,7 @@ public class Parser {
 		return result;
 	}
 	
-	// ´¦ÀíÒ»Ôª¼Ó¼õ
+	// 处理一元加减
 	private double exec5() throws ParserException{
 		double result;
 		String op = "";
@@ -165,7 +165,7 @@ public class Parser {
 		return result;
 	}
 	
-	// ´¦ÀíÀ¨ºÅÀïµÄ±í´ïÊ½
+	// 处理括号里的表达式
 	private double exec6() throws ParserException{
 		double result;
 		
@@ -193,7 +193,7 @@ public class Parser {
 	}
 	
 	/**
-	 * »ñÈ¡ÏÂÒ»¸ö±êÊ¶·û
+	 * 获取下一个标识符
 	 */
 	private void getToken(){
 		tokType = NONE;
@@ -203,35 +203,35 @@ public class Parser {
 			token = EOE;
 			return;
 		}
-		// Ìø¹ý¿Õ¸ñ
+		// 跳过空格
 		while(expIdx < exp.length() && Character.isWhitespace(exp.charAt(expIdx))){
 			++expIdx;
 		}
 		
-		// ±í´ïÊ½Ä©Î²ÊÇ¿Õ¸ñ
+		// 表达式末尾是空格
 		if(expIdx == exp.length()){
 			token = EOE;
 			return;
 		}
 		
-		if(isDelim(exp.charAt(expIdx))){	//·Ö¸ô·û
+		if(isDelim(exp.charAt(expIdx))){	//分隔符
 			token += exp.charAt(expIdx);
 			expIdx++;
 			tokType = DELIMITER;
-		}else if(Character.isLetter(exp.charAt(expIdx))){	// ±äÁ¿
+		}else if(Character.isLetter(exp.charAt(expIdx))){	// 变量
 			while(expIdx < exp.length() && !isDelim(exp.charAt(expIdx))){
 				token += exp.charAt(expIdx);
 				expIdx++;
 			}
 			tokType = VARIABLE;
-		}else if(Character.isDigit(exp.charAt(expIdx))){	// ÊýÖµ
+		}else if(Character.isDigit(exp.charAt(expIdx))){	// 数值
 			while(expIdx < exp.length() && !isDelim(exp.charAt(expIdx))){
 				token += exp.charAt(expIdx);
 				expIdx++;
 			}
 			tokType = NUMBER;
 		}
-		else{	// Î´ÖªÀàÐÍ£¬±í´ïÊ½ÖÕÖ¹
+		else{	// 未知类型，表达式终止
 			token = EOE;
 			return;
 		}
@@ -248,7 +248,7 @@ public class Parser {
 		throw new ParserException(err[error]);
 	}
 	
-	// »ñÈ¡ token µÄÖµ
+	// 获取 token 的值
 	private double atom() throws ParserException{
 		double result = 0.0;
 		
